@@ -16,6 +16,7 @@ return {
       "nvim-lua/plenary.nvim",
     },
     lazy = true,
+    ft = "rust",
     opts = {
       tools = { -- rust-tools options
 
