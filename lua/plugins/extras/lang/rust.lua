@@ -1,3 +1,5 @@
+-- Update this path
+
 return {
   -- add rust to treesitter
   {
@@ -10,92 +12,14 @@ return {
 
   -- correctly setup lspconfig for Rust 🦀
   {
-    "simrat39/rust-tools.nvim",
+    "neovim/nvim-lspconfig",
     dependencies = {
-      "neovim/nvim-lspconfig",
-      "nvim-lua/plenary.nvim",
+      "simrat39/rust-tools.nvim",
     },
-    lazy = true,
-    ft = "rust",
     opts = {
-      tools = { -- rust-tools options
-
-        -- how to execute terminal commands
-        -- options right now: termopen / quickfix
-        -- executor = require("rust-tools/executors").termopen,
-
-        -- callback to execute once rust-analyzer is done initializing the workspace
-        -- The callback receives one parameter indicating the `health` of the server: "ok" | "warning" | "error"
-        on_initialized = nil,
-
-        -- automatically call RustReloadWorkspace when writing to a Cargo.toml file.
-        reload_workspace_from_cargo_toml = true,
-
-        -- These apply to the default RustSetInlayHints command
-        inlay_hints = {
-          -- automatically set inlay hints (type hints)
-          -- default: true
-          auto = true,
-
-          -- Only show inlay hints for the current line
-          only_current_line = false,
-
-          -- whether to show parameter hints with the inlay hints or not
-          -- default: true
-          show_parameter_hints = true,
-
-          -- prefix for parameter hints
-          -- default: "<-"
-          parameter_hints_prefix = "<- ",
-
-          -- prefix for all the other hints (type, chaining)
-          -- default: "=>"
-          other_hints_prefix = "=> ",
-
-          -- whether to align to the lenght of the longest line in the file
-          max_len_align = false,
-
-          -- padding from the left if max_len_align is true
-          max_len_align_padding = 1,
-
-          -- whether to align to the extreme right or not
-          right_align = false,
-
-          -- padding from the right if right_align is true
-          right_align_padding = 7,
-
-          -- The color of the hints
-          highlight = "Comment",
-        },
-
-        -- options same as lsp hover / vim.lsp.util.open_floating_preview()
-        hover_actions = {
-
-          -- the border that is used for the hover window
-          -- see vim.api.nvim_open_win()
-          border = {
-            { "╭", "FloatBorder" },
-            { "─", "FloatBorder" },
-            { "╮", "FloatBorder" },
-            { "│", "FloatBorder" },
-            { "╯", "FloatBorder" },
-            { "─", "FloatBorder" },
-            { "╰", "FloatBorder" },
-            { "│", "FloatBorder" },
-          },
-
-          -- whether the hover action window gets automatically focused
-          -- default: false
-          auto_focus = false,
-        },
-
-        -- all the opts to send to nvim-lspconfig
-        -- these override the defaults set by rust-tools.nvim
-        -- see https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#rust_analyzer
-        server = {
-          -- standalone file support
-          -- setting it to false may improve startup time
-          standalone = true,
+      servers = {
+        rust_analyzer = { 
+          mason = false,
           settings = {
             ["rust-analyzer"] = {
               imports = {
@@ -116,15 +40,38 @@ return {
                 command = "clippy",
               },
             },
-          },
-        }, -- rust-analyer options
+          }, 
+        },
+      },
+      setup = {
+        rust_analyzer = function(_, opts)
+          local codelldb_path = ""
+          local liblldb_path = ""
+          local this_os = vim.loop.os_uname().sysname
 
-        -- debugging stuff
-        -- dap = { },
+          local mason_registry = require("mason-registry")
+          local codelldb = mason_registry.get_package("codelldb") -- note that this will error if you provide a non-existent package name
+          local codelldb_install_path = codelldb:get_install_path() -- returns a string like "/home/user/.local/share/nvim/mason/packages/codelldb"
+          -- The path in windows is different
+          if this_os:find "Windows" then
+            codelldb_path = codelldb_install_path .. "\\extension\\adapter\\codelldb.exe"
+            liblldb_path = codelldb_install_path .. "\\extension\\lldb\\bin\\liblldb.dll"
+          else
+            -- The liblldb extension is .so for linux and .dylib for macOS
+            codelldb_path = codelldb_install_path .. "/extension" .. "/adapter/codelldb"
+            liblldb_path = codelldb_install_path .. "/extension" .. "/lldb/lib/liblldb" .. (this_os == "Linux" and ".so" or ".dylib")
+          end
+
+          local rust_tool_opts = vim.tbl_deep_extend("force", opts, {
+            dap = {
+              adapter = require('rust-tools.dap').get_codelldb_adapter(codelldb_path, liblldb_path)
+            },
+          })
+
+           require("rust-tools").setup(rust_tool_opts)
+           return true
+        end,
       },
     },
-    config = function(_, opts)
-      require("rust-tools").setup(opts)
-    end,
   },
 }
