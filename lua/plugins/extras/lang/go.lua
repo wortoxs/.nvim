@@ -8,11 +8,11 @@ return {
 
   {
     "neovim/nvim-lspconfig",
-    ft = { "go", "gomod" },
-    lazy = true,
     opts = {
       servers = {
-        gopls = {},
+        gopls = {
+            mason = false,
+        },
       },
     },
   },
