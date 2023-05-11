@@ -11,7 +11,7 @@ return {
     opts = {
       servers = {
         gopls = {
-            mason = false,
+          mason = false,
         },
       },
     },
@@ -25,7 +25,7 @@ return {
       "nvim-treesitter/nvim-treesitter",
     },
     config = function()
-      require("go").setup({ dap_debug_gui = false, })
+      require("go").setup({ dap_debug_gui = false })
     end,
     event = { "CmdlineEnter" },
     lazy = true,

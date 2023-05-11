@@ -21,7 +21,7 @@ return {
     opts = {
       -- make sure mason installs the server
       servers = {
-        clangd = { mason = false, },
+        clangd = { mason = false },
       },
       setup = {
         clangd = function(_, opts)
